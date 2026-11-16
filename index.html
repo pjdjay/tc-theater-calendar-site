@@ -53,6 +53,11 @@ h1{display:inline-block;margin:0;font-size:1.6rem;font-weight:700;line-height:1.
 .fbtn[aria-expanded=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .fbtn .n{background:var(--accent);color:var(--accent-ink);border-radius:var(--r-pill);font-size:.72rem;padding:0 6px;line-height:1.5}
 .fbtn[aria-expanded=true] .n{background:var(--accent-ink);color:var(--accent)}
+/* date picker row */
+.dates{max-width:var(--maxw);margin:8px auto 0;padding:0 var(--gut);display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.dates label{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.dates input[type=date]{min-height:34px;padding:3px 8px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:.9rem;text-transform:none;letter-spacing:0;color-scheme:light dark}
+.dates input[type=date]:focus-visible,.chip:focus-visible,.fbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* filter panel */
 .filters[hidden]{display:none}
 .filters{margin-top:10px}
@@ -140,6 +145,7 @@ li.ev{padding:14px 18px 10px}
 <body>
 <header class="top"><h1>Twin Cities Theater</h1><span class="updated" id="updated"></span></header>
 <div class="tools"><button type="button" class="fbtn" id="fbtn" aria-controls="filters" aria-expanded="false">Filters</button><button type="button" class="chip" id="soon" aria-pressed="false">Closing soon</button></div>
+<div class="dates" id="dates" role="group" aria-label="Find by date"><label>From <input type="date" id="d-from"></label><label>To <input type="date" id="d-to"></label><button type="button" class="chip" id="d-today">Tonight</button><button type="button" class="chip" id="d-wknd">This weekend</button><button type="button" class="linkbtn" id="d-clear" hidden>Clear dates</button></div>
 <div class="filters" id="filters" hidden><div class="fpanel">
 <div class="frow"><div class="flabel" id="l-types">Type</div><div class="chips" id="f-types" role="group" aria-labelledby="l-types"></div></div>
 <div class="frow"><div class="flabel" id="l-levels">Producer</div><div class="chips" id="f-levels" role="group" aria-labelledby="l-levels"></div></div>
@@ -176,12 +182,13 @@ function $(id){return document.getElementById(id)}
 var present={types:{},levels:{},ages:{},acc:{},cities:{}},cityN={};
 P.forEach(function(p){present.types[p.ty]=1;present.levels[p.lv]=1;present.ages[p.ab]=1;p.ac.forEach(function(a){present.acc[a]=1});present.cities[p.y]=1;cityN[p.y]=(cityN[p.y]||0)+1});
 var st={types:[],levels:[],ages:[],acc:[],cities:[],soon:false};
+var dfrom="",dto="";   // date range: not saved (a stale range would hide the page)
 function fits(g,v){return present[g][v]===1}
 try{var raw=window.localStorage.getItem(KEY);if(raw){var s=JSON.parse(raw);
  ["types","levels","ages","acc","cities"].forEach(function(g){if(s&&Array.isArray(s[g]))st[g]=s[g].filter(function(v){return typeof v==="string"&&fits(g,v)})});
  st.soon=!!(s&&s.soon)}}catch(e){}
 function save(){try{window.localStorage.setItem(KEY,JSON.stringify(st))}catch(e){}}
-function nActive(){return st.types.length+st.levels.length+st.ages.length+st.acc.length+st.cities.length+(st.soon?1:0)}
+function nActive(){return st.types.length+st.levels.length+st.ages.length+st.acc.length+st.cities.length+(st.soon?1:0)+(dfrom||dto?1:0)}
 
 // dates (the viewer's own clock decides what is past)
 function pad(n){return n<10?"0"+n:""+n}
@@ -246,6 +253,8 @@ function render(){
  for(var i=0;i<P.length;i++){var p=P[i];
   if(p.d<TODAY)continue;           // past days are hidden by the viewer's clock
   anyFuture=true;
+  if(dfrom&&p.d<dfrom)continue;
+  if(dto&&p.d>dto)continue;
   if(!ok(p))continue;
   if(!cur||cur.d!==p.d){cur={d:p.d,i:[]};days.push(cur)}
   cur.i.push(i);total++}
@@ -255,12 +264,15 @@ function render(){
   for(var j=0;j<lim;j++)cards.push(card(day.i[j]));
   out.push('<section class="day" data-d="'+day.d+'"><h2><span class="leaf" aria-hidden="true"><span class="lm">'+MON[dt.getUTCMonth()]+'</span><span class="ld">'+dt.getUTCDate()+'</span></span><span class="lw">'+WD[dt.getUTCDay()]+'<span class="vh">, '+MON[dt.getUTCMonth()]+" "+dt.getUTCDate()+'</span></span><small>'+n+" performance"+(n===1?"":"s")+'</small></h2><ul>'+cards.join("")+'</ul>'+(lim<n?'<button type="button" class="more" data-more="'+day.d+'">Show '+(n-lim)+' more</button>':"")+'</section>');
  });
- if(!out.length)out.push('<div class="empty">'+(nActive()?'No performances match these filters.<br><button type="button" class="linkbtn" data-clear="1">Clear filters</button>':anyFuture?"No performances listed.":"This listing has ended. Reload the page for the latest one.")+'</div>');
+ if(!out.length)out.push('<div class="empty">'+(nActive()?'No performances match'+(dfrom||dto?" these dates and filters":" these filters")+'.<br><button type="button" class="linkbtn" data-clear="1">Clear all</button>':anyFuture?"No performances listed.":"This listing has ended. Reload the page for the latest one.")+'</div>');
  daysEl.innerHTML=out.join("");
  var s=$("status");
- s.innerHTML=nActive()?total+" performance"+(total===1?"":"s")+' match <button type="button" class="linkbtn" data-clear="1">Clear filters</button>':"";
- var fb=$("fbtn"),c=nActive();
+ s.innerHTML=nActive()?total+" performance"+(total===1?"":"s")+' match <button type="button" class="linkbtn" data-clear="1">Clear all</button>':"";
+ var fb=$("fbtn"),c=nActive()-(dfrom||dto?1:0);
  fb.innerHTML="Filters"+(c?' <span class="n">'+c+"</span>":"");
+ $("d-clear").hidden=!(dfrom||dto);
+ $("d-today").setAttribute("aria-pressed",dfrom===TODAY&&dto===TODAY?"true":"false");
+ $("d-wknd").setAttribute("aria-pressed",wk&&dfrom===wk[0]&&dto===wk[1]?"true":"false");
  $("soon").setAttribute("aria-pressed",st.soon?"true":"false");
 }
 function chips(){
@@ -274,7 +286,21 @@ function chips(){
   $(g[1]).innerHTML=vals.map(function(v){return '<button type="button" class="chip" data-g="'+key+'" data-v="'+esc(v)+'" aria-pressed="'+(st[key].indexOf(v)>-1)+'">'+esc(labels?labels[v]:v)+"</button>"}).join("");
  });
 }
-function clearAll(){st={types:[],levels:[],ages:[],acc:[],cities:[],soon:false};save();chips();render()}
+function clearAll(){st={types:[],levels:[],ages:[],acc:[],cities:[],soon:false};dfrom=dto="";$("d-from").value="";$("d-to").value="";save();chips();render()}
+// date controls: From/To (one night = same day in both), Tonight, This weekend (Fri to Sun; on Sat or Sun, today through Sunday)
+var FIRST="",LAST="";P.forEach(function(p){if(p.d>=TODAY){if(!FIRST||p.d<FIRST)FIRST=p.d;if(p.d>LAST)LAST=p.d}});
+var dF=$("d-from"),dT=$("d-to");
+if(FIRST){dF.min=dT.min=FIRST;dF.max=dT.max=LAST}
+function addDays(d,n){var x=ymd(d);x.setUTCDate(x.getUTCDate()+n);return x.getUTCFullYear()+"-"+pad(x.getUTCMonth()+1)+"-"+pad(x.getUTCDate())}
+var wk=(function(){var dow=ymd(TODAY).getUTCDay(),a,b;
+ if(dow===0){a=TODAY;b=TODAY}else if(dow===6){a=TODAY;b=addDays(TODAY,1)}else{a=addDays(TODAY,5-dow);b=addDays(TODAY,7-dow)}
+ return [a,b]})();
+function setRange(a,b){dfrom=a;dto=b;dF.value=a;dT.value=b;render()}
+dF.addEventListener("change",function(){dfrom=dF.value;if(dfrom&&dto&&dto<dfrom){dto=dfrom;dT.value=dto}render()});
+dT.addEventListener("change",function(){dto=dT.value;if(dfrom&&dto&&dfrom>dto){dfrom=dto;dF.value=dfrom}render()});
+$("d-today").addEventListener("click",function(){if(dfrom===TODAY&&dto===TODAY)setRange("","");else setRange(TODAY,TODAY)});
+$("d-wknd").addEventListener("click",function(){if(dfrom===wk[0]&&dto===wk[1])setRange("","");else setRange(wk[0],wk[1])});
+$("d-clear").addEventListener("click",function(){setRange("","")});
 $("filters").addEventListener("click",function(e){
  var b=e.target.closest("button");if(!b)return;
  if(b.id==="f-clear"){clearAll();return}
