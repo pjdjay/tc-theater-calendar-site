@@ -116,9 +116,9 @@ li.ev.gone{background:transparent;border-style:dashed;border-color:var(--line-2)
 .kick .co{color:var(--ink-2)}
 .l1{margin-top:2px}
 .h{font-weight:700;font-size:1.24rem;line-height:1.22;letter-spacing:-.005em;color:var(--ink);text-decoration:none;overflow-wrap:anywhere}
-a.h{display:inline-block;padding:4px 0;color:var(--accent)}
-a.h:hover,a.h:focus-visible{text-decoration:underline}
-a.h .ext{font-size:.8em;font-weight:400;margin-left:4px}
+a.h{display:inline-block;padding:4px 0}   /* titles use the ink colour like music: accent-coloured titles read weaker */
+a.h:hover,a.h:focus-visible{text-decoration:underline;color:var(--accent)}
+a.h .ext{font-size:.8em;font-weight:400;margin-left:4px;color:var(--accent)}
 .badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:var(--r-pill);font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;vertical-align:.15em}
 .badge.sold{background:var(--hi);color:var(--hi-ink)}
 .badge.off{background:var(--warn);color:var(--bg)}
