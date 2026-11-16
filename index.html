@@ -11,6 +11,7 @@
 <meta property="og:title" content="Twin Cities Theater">
 <meta property="og:description" content="Upcoming theater, dance, opera and comedy performances at Twin Cities companies and venues, in one calendar.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext x=%2750%27 y=%27.9em%27 font-size=%2790%27 text-anchor=%27middle%27%3E%F0%9F%8E%AD%3C/text%3E%3C/svg%3E">
+<script>try{var t=localStorage.getItem("tctheater.theme.v1");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <style>
 /* Design tokens: see DESIGN.md. Light values here; the dark block below redefines colours only (the page follows the system setting). */
 :root{--font:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--maxw:760px;--gut:16px;--r-sm:8px;--r-md:12px;--r-card:14px;--r-lg:16px;--r-pill:999px;
@@ -18,11 +19,17 @@
 --accent:#00686b;--accent-ink:#fff;--accent-soft:#d3ebea;--warn:#b3261e;--hi:#ffd23f;--hi-ink:#10181a;--pop:0 10px 30px rgba(16,24,26,.2);
 --g-coral-bg:#fbe0d8;--g-coral-fg:#712b13;--g-blue-bg:#dbe9f8;--g-blue-fg:#0c447c;--g-green-bg:#e3f0d3;--g-green-fg:#27500a;--g-amber-bg:#faeeda;--g-amber-fg:#633806;
 --g-grey-bg:#dcdad2;--g-grey-fg:#2c2c2a;--g-orange-bg:#fde3c8;--g-orange-fg:#6b3300;--g-pink-bg:#f9dce8;--g-pink-fg:#72243e;--g-violet-bg:#e6dcf8;--g-violet-fg:#3c3489}
-@media (prefers-color-scheme:dark){:root{color-scheme:dark;
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;
 --bg:#0e1516;--surface:#162022;--surface-2:#223130;--ink:#eef4f2;--ink-2:#cdd9d6;--muted:#98a8a6;--line:#2e4442;--line-2:#425b58;
 --accent:#5fd6d0;--accent-ink:#071414;--accent-soft:#143331;--warn:#ff8a7a;--pop:0 10px 30px rgba(0,0,0,.6);
 --g-coral-bg:#5a2a1f;--g-coral-fg:#f5c4b3;--g-blue-bg:#1d3a5c;--g-blue-fg:#b5d4f4;--g-green-bg:#2b3f1a;--g-green-fg:#c0dd97;--g-amber-bg:#4a3512;--g-amber-fg:#fac775;
 --g-grey-bg:#3a3a38;--g-grey-fg:#d3d1c7;--g-orange-bg:#4d3015;--g-orange-fg:#f7c38f;--g-pink-bg:#4f1f33;--g-pink-fg:#f4c0d1;--g-violet-bg:#363060;--g-violet-fg:#cecbf6}}
+:root[data-theme="light"]{color-scheme:light}
+:root[data-theme="dark"]{color-scheme:dark;
+--bg:#0e1516;--surface:#162022;--surface-2:#223130;--ink:#eef4f2;--ink-2:#cdd9d6;--muted:#98a8a6;--line:#2e4442;--line-2:#425b58;
+--accent:#5fd6d0;--accent-ink:#071414;--accent-soft:#143331;--warn:#ff8a7a;--pop:0 10px 30px rgba(0,0,0,.6);
+--g-coral-bg:#5a2a1f;--g-coral-fg:#f5c4b3;--g-blue-bg:#1d3a5c;--g-blue-fg:#b5d4f4;--g-green-bg:#2b3f1a;--g-green-fg:#c0dd97;--g-amber-bg:#4a3512;--g-amber-fg:#fac775;
+--g-grey-bg:#3a3a38;--g-grey-fg:#d3d1c7;--g-orange-bg:#4d3015;--g-orange-fg:#f7c38f;--g-pink-bg:#4f1f33;--g-pink-fg:#f4c0d1;--g-violet-bg:#363060;--g-violet-fg:#cecbf6}
 /* type -> colour family (theme-independent; the families above carry the theme) */
 .ty[data-t="drama"]{--tbg:var(--g-blue-bg);--tfg:var(--g-blue-fg)}
 .ty[data-t="comedy"],.ty[data-t="improv"],.ty[data-t="sketch"]{--tbg:var(--g-amber-bg);--tfg:var(--g-amber-fg)}
@@ -58,6 +65,11 @@ h1{display:inline-block;margin:0;font-size:1.6rem;font-weight:700;line-height:1.
 .jd .ic{width:16px;height:16px}
 .jd input{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;padding:0;margin:0;cursor:pointer}
 .jd:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:var(--r-pill);overflow:hidden}
+.seg button{border:0;background:var(--surface);color:var(--ink);font:inherit;font-size:.85rem;padding:5px 14px;min-height:34px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line-2)}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 /* filter panel */
 .filters[hidden]{display:none}
 .filters{margin-top:10px}
@@ -164,6 +176,7 @@ li.ev{padding:14px 18px 10px}
 <div class="frow"><div class="flabel" id="l-ages">Age</div><div class="chips" id="f-ages" role="group" aria-labelledby="l-ages"></div><div class="pnote">Grouped by the youngest age the listing recommends.</div></div>
 <div class="frow"><div class="flabel" id="l-acc">Accessibility</div><div class="chips" id="f-acc" role="group" aria-labelledby="l-acc"></div><div class="pnote">Only performances the listing names. A performance without a tag may still offer it: check with the theater.</div></div>
 <div class="frow"><div class="flabel" id="l-cities">City</div><div class="chips" id="f-cities" role="group" aria-labelledby="l-cities"></div></div>
+<div class="frow"><div class="flabel" id="l-theme">Appearance</div><div class="seg" id="f-theme" role="group" aria-labelledby="l-theme"></div></div>
 <button class="clear" id="f-clear" type="button">Clear filters</button>
 </div></div>
 <div class="hmsg" id="hmsg" role="status" hidden></div>
@@ -457,6 +470,14 @@ jumpIn.addEventListener("change",function(){if(jumpIn.value)jumpTo(jumpIn.value,
 jumpIn.addEventListener("click",function(){try{if(jumpIn.showPicker)jumpIn.showPicker()}catch(e){}});
 function fromHash(){var h=location.hash.slice(1);if(ISO.test(h))jumpTo(h,false)}
 window.addEventListener("hashchange",fromHash);
+// theme (Auto | Light | Dark); the <head> script applied the saved value before first paint
+(function(){var box=$("f-theme"),root=document.documentElement;
+ function cur(){var t=root.getAttribute("data-theme");return t==="light"||t==="dark"?t:"auto"}
+ function sync(){var c=cur();Array.prototype.forEach.call(box.children,function(b){b.setAttribute("aria-pressed",b.getAttribute("data-v")===c?"true":"false")})}
+ [["auto","Auto"],["light","Light"],["dark","Dark"]].forEach(function(o){var b=document.createElement("button");b.type="button";b.textContent=o[1];b.setAttribute("data-v",o[0]);
+  b.addEventListener("click",function(){if(o[0]==="auto")root.removeAttribute("data-theme");else root.setAttribute("data-theme",o[0]);
+   try{if(o[0]==="auto")localStorage.removeItem("tctheater.theme.v1");else localStorage.setItem("tctheater.theme.v1",o[0])}catch(e){}sync()});box.appendChild(b)});
+ sync()})();
 chips();render();fromHash();
 })();
 </script>
