@@ -164,11 +164,12 @@ a.h:hover,a.h:focus-visible{text-decoration:underline;color:var(--accent)}
 .tixl .ic{width:14px;height:14px;display:block;flex:none}
 .meta>a.vsite{position:relative;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
 .meta>a.vsite::after{content:"";position:absolute;left:0;right:0;top:-7px;bottom:-7px}
-/* preview video: icon only, 30px target in the detail line (negative vertical margin keeps the line height), music's red --yt tokens */
-.meta>a.ytl{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;margin:-5px 0 -5px 2px;border-radius:var(--r-sm);color:var(--yt);text-decoration:none}
-.meta>a.ytl::before{content:none}
-.meta>a.ytl:hover,.meta>a.ytl:focus-visible{background:color-mix(in srgb,currentColor 13%,transparent)}
-.ytl .ic{width:20px;height:20px;display:block;flex:none}
+/* preview video: icon only, YouTube's mark as in music, 30px target in the card's bottom-right corner (the heart's mirror image; --yt tints hover and focus) */
+.yslot{position:absolute;right:8px;bottom:6px;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:var(--r-sm);color:var(--yt);text-decoration:none}
+.yslot:hover,.yslot:focus-visible{background:color-mix(in srgb,currentColor 13%,transparent)}
+.yslot .yti{display:block;width:24px;height:auto}
+.yslot .ic{width:20px;height:20px;display:block}
+li.ev.hasyt>.meta,li.ev.hasyt>.acc,li.ev.hasyt>.links,li.ev.hasyt>details.note{padding-right:40px}   /* keep text clear of the icon */
 .meta .dflt{font-style:italic}
 .acc{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px}
 .acc span{padding:1px 8px;border:1px solid var(--line-2);border-radius:var(--r-pill);font-size:.72rem;font-weight:700;color:var(--ink-2)}
@@ -353,14 +354,15 @@ function goneCard(k,g){   // a heart whose performance is no longer listed, show
 // one card, built once per performance and cached
 var cache=[];
 var PLAY='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>';
-var YTID=/^[A-Za-z0-9_-]{11}$/,YT_WATCH="https:"+"//www.youtube.com/watch?v=";   // the payload carries only the 11-character id; the URL is built here
+var YT_IMG="data:image/png;base64,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",YTID=/^[A-Za-z0-9_-]{11}$/,YT_WATCH="https:"+"//www.youtube.com/watch?v=";   // the payload carries only the 11-character id; the URL is built here
 var TIX='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a3 3 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a3 3 0 0 0 0-6z"/><path d="M14 5v3M14 11v2M14 16v3"/></svg>';
 // venue link: a Google Maps search on the full venue name (parenthetical room list dropped; the stage is left out) plus city, same as music
 function venueMapUrl(p){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(((p.vf||p.v)||"").replace(/\s*\([^)]*\)/g,"").trim()+" "+(p.y||"")+" MN")}
 function card(i){
  if(cache[i])return cache[i];
  var p=P[i],off=p.st==="cancelled"||p.st==="postponed",tk=link(p.tk),su=link(p.su);
- var main=su||tk,h='<li class="ev'+(off?" off":"")+'">';
+ var yt=typeof p.yt==="string"&&YTID.test(p.yt)?p.yt:"";
+ var main=su||tk,h='<li class="ev'+(off?" off":"")+(yt?" hasyt":"")+'">';
  h+=HEXKEY.test(p.pk)?heartBtn(p.pk,i,p.t,p.v,p.d,p.tm):'<span class="hslot"></span>';
  // venue (Google Maps) and city above the title, as on music
  var vn=p.vf||p.v;
@@ -378,7 +380,6 @@ function card(i){
  var m='<span class="tm'+(p.tm?"":" tba")+'">'+(p.tm?esc(fmtTime(p.tm)):"Time TBA")+'</span>';
  if(p.pr)m+='<span class="price">'+esc(p.pr)+'</span>';
  if(tk)m+='<a class="tixl" href="'+esc(tk)+'" target="_blank" rel="noopener noreferrer" title="Buy tickets (opens the seller’s page)" aria-label="Tickets (opens in a new tab)">'+TIX+'<span class="lbl">Tickets</span></a>';
- if(typeof p.yt==="string"&&YTID.test(p.yt))m+='<a class="ytl" href="'+esc(YT_WATCH+p.yt)+'" target="_blank" rel="noopener noreferrer" title="Watch a preview (opens YouTube in a new tab)" aria-label="'+esc("Watch a preview of "+p.t)+'">'+PLAY+'</a>';
  m+='<span class="ty" data-t="'+esc(p.ty)+'">'+esc(TYPE_LABEL[p.ty]||p.ty)+'</span>';
  if(p.ag)m+='<span>'+esc(p.ag)+(p.ad?' <span class="dflt">(usual for this company)</span>':"")+'</span>';
  if(p.cs)m+='<span class="soon">Closing soon'+(p.rc?" · through "+esc(mdLabel(p.rc)):"")+'</span>';
@@ -391,6 +392,7 @@ function card(i){
  if(L.length)h+='<div class="links">'+L.join("")+'</div>';
  if(p.b==="p")h+='<details class="note"><summary>From the weekly schedule</summary><p>This company publishes a weekly pattern of show times, not a date-by-date calendar, so holiday, added or dark dates may differ. Check with the theater before you go.</p></details>';
  else if(p.b==="r")h+='<details class="note"><summary>Dates only</summary><p>The days and times are not confirmed. Check with the theater.</p></details>';
+ if(yt)h+='<a class="yslot" href="'+esc(YT_WATCH+yt)+'" target="_blank" rel="noopener noreferrer" title="Watch a preview (opens YouTube in a new tab)" aria-label="'+esc("Watch a preview of "+p.t)+'">'+(YT_IMG?'<img class="yti" src="'+esc(YT_IMG)+'" alt="" width="24" height="17" decoding="async" aria-hidden="true">':PLAY)+'</a>';
  return cache[i]=h+"</li>";
 }
 
