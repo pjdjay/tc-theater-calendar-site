@@ -121,7 +121,7 @@ section.day>ul{list-style:none;margin:0;padding:4px var(--gut) 0;display:flex;fl
 li.ev{position:relative;padding:12px 14px 10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card)}   /* flat: no shadow, no hover, no pointer (the card itself is not a link) */
 /* room for the heart (Step 8): a 30px slot in the top-right corner; text never runs under it */
 .hslot{position:absolute;top:6px;right:8px;width:30px;height:30px}
-li.ev>.tm,li.ev>.kick,li.ev>.l1{padding-right:40px}
+li.ev>.tm,li.ev>.kick,li.ev>.l1{padding-right:40px}   /* the venue line and title share the top-right corner with the heart */
 /* heart (ported from music): outline when off, filled accent when on; shape and aria-pressed carry the state, not colour alone */
 .heart{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:0;border-radius:var(--r-sm);background:none;color:var(--muted);cursor:pointer}
 .heart .ic{width:19px;height:19px;display:block}
@@ -135,24 +135,35 @@ li.ev.gone{background:transparent;border-style:dashed;border-color:var(--line-2)
 .hnote{margin-top:6px}
 .tm{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:1.05rem;font-weight:700;line-height:1.3;font-variant-numeric:tabular-nums;color:var(--ink)}
 .tm.tba{color:var(--muted)}
-.kick{margin-top:2px;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);overflow-wrap:anywhere}
-.kick .co{color:var(--ink-2)}
+.kick{display:flex;flex-wrap:wrap;gap:0 8px;margin-top:2px;font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);overflow-wrap:anywhere}
+.vlink{padding:7px 0;margin:-7px 0;color:var(--accent);text-decoration:none;overflow-wrap:anywhere}   /* a link out to the venue's Google Maps listing (address, hours, phone, the venue's own site); it never filters */
+.vlink::after{content:"\00a0\2197";font-size:.9em;font-weight:400}
+.vlink:hover,.vlink:focus-visible{text-decoration:underline}
+.city{color:var(--muted)}
+.co{margin-top:2px;font-size:.9rem;color:var(--ink-2);overflow-wrap:anywhere}   /* company, under the title (music's "with ..." line) */
 .l1{margin-top:2px}
 .h{font-weight:700;font-size:1.24rem;line-height:1.22;letter-spacing:-.005em;color:var(--ink);text-decoration:none;overflow-wrap:anywhere}
 a.h{display:inline-block;padding:4px 0}   /* titles use the ink colour like music: accent-coloured titles read weaker */
 a.h:hover,a.h:focus-visible{text-decoration:underline;color:var(--accent)}
-a.h .ext{font-size:.8em;font-weight:400;margin-left:4px;color:var(--accent)}
 .badge{display:inline-block;margin-left:8px;padding:2px 8px;border-radius:var(--r-pill);font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;vertical-align:.15em}
 .badge.sold{background:var(--hi);color:var(--hi-ink)}
 .badge.off{background:var(--warn);color:var(--bg)}
 .badge.ext{background:var(--accent-soft);color:var(--accent)}
 .soon{display:inline-block;padding:1px 9px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent);font-size:.7rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase}
-.meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;margin-top:3px;font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 0;margin-top:4px;font-size:.8rem;color:var(--muted);overflow-wrap:anywhere}
 .meta>*+*::before{content:"\00b7";display:inline-block;margin:0 6px;font-weight:400;color:var(--muted)}
-.meta>.ty{margin-right:4px;padding:1px 9px;border-radius:var(--r-pill);background:var(--tbg,var(--surface-2));color:var(--tfg,var(--ink-2));font-size:.74rem;font-weight:700}
-.meta>.ty::before{content:none}
+.meta>.tm{font-size:.8rem;font-weight:600;color:var(--ink-2);gap:0}   /* time, price, Tickets, then the type pill (same order as music) */
+.meta>.ty{margin:0 8px 0 10px;padding:1px 9px;border-radius:var(--r-pill);background:var(--tbg,var(--surface-2));color:var(--tfg,var(--ink-2));font-size:.74rem;font-weight:700}
+.meta>.ty::before,.meta>.soon::before{content:none}
+.meta>.soon{margin-right:8px}
 .meta>.ty+*::before{content:none}
 .meta>.price{font-weight:700;color:var(--ink)}
+.meta>a.tixl{position:relative;display:inline-flex;align-items:center;gap:4px;color:var(--accent);font-weight:600;text-decoration:none}
+.meta>a.tixl::after{content:"";position:absolute;left:0;right:-4px;top:-7px;bottom:-7px}   /* 44px-ish tap target without moving the line */
+.meta>a.tixl .lbl{text-decoration:underline;text-underline-offset:3px}
+.tixl .ic{width:14px;height:14px;display:block;flex:none}
+.meta>a.vsite{position:relative;color:var(--accent);text-decoration:underline;text-underline-offset:2px}
+.meta>a.vsite::after{content:"";position:absolute;left:0;right:0;top:-7px;bottom:-7px}
 .meta .dflt{font-style:italic}
 .acc{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:6px}
 .acc span{padding:1px 8px;border:1px solid var(--line-2);border-radius:var(--r-pill);font-size:.72rem;font-weight:700;color:var(--ink-2)}
@@ -169,7 +180,9 @@ details.note summary:hover,details.note[open] summary{color:var(--ink-2)}
 details.note p{margin:0 0 4px;padding-left:20px;line-height:1.35}
 /* cancelled / postponed: muted text, not opacity (opacity would drop text below 4.5:1) */
 li.ev.off{background:transparent;border-style:dashed;border-color:var(--line-2)}
-li.ev.off .h,li.ev.off .tm,li.ev.off .kick .co,li.ev.off .meta>.price{color:var(--muted)}
+li.ev.off .h,li.ev.off .tm,li.ev.off .vlink,li.ev.off .co,li.ev.off .meta>.price{color:var(--muted)}
+li.ev.off .meta>a.tixl{color:var(--muted);font-weight:500}
+li.ev.off .meta>a.tixl .lbl{text-decoration:line-through}
 li.ev.off .h{text-decoration:line-through}
 li.ev.off .ty{--tbg:var(--surface-2);--tfg:var(--muted)}
 /* list controls */
@@ -334,32 +347,37 @@ function goneCard(k,g){   // a heart whose performance is no longer listed, show
 
 // one card, built once per performance and cached
 var cache=[];
+var TIX='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9V6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v3a3 3 0 0 0 0 6v3a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-3a3 3 0 0 0 0-6z"/><path d="M14 5v3M14 11v2M14 16v3"/></svg>';
+// venue link: a Google Maps search on the full venue name (parenthetical room list dropped; the stage is left out) plus city, same as music
+function venueMapUrl(p){return "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(((p.vf||p.v)||"").replace(/\s*\([^)]*\)/g,"").trim()+" "+(p.y||"")+" MN")}
 function card(i){
  if(cache[i])return cache[i];
- var p=P[i],off=p.st==="cancelled"||p.st==="postponed";
- var main=link(p.tk)||link(p.su),h='<li class="ev'+(off?" off":"")+'">';
+ var p=P[i],off=p.st==="cancelled"||p.st==="postponed",tk=link(p.tk),su=link(p.su);
+ var main=su||tk,h='<li class="ev'+(off?" off":"")+'">';
  h+=HEXKEY.test(p.pk)?heartBtn(p.pk,i,p.t,p.v,p.d,p.tm):'<span class="hslot"></span>';
- h+='<div class="tm'+(p.tm?"":" tba")+'"><span>'+(p.tm?esc(fmtTime(p.tm)):"Time TBA")+'</span>';
- if(p.cs)h+='<span class="soon">Closing soon'+(p.rc?" · through "+esc(mdLabel(p.rc)):"")+'</span>';
+ // venue (Google Maps) and city above the title, as on music
+ var vn=p.vf||p.v;
+ h+='<div class="kick"><a class="vlink" href="'+esc(venueMapUrl(p))+'" target="_blank" rel="noopener noreferrer" title="Address and info for '+esc(vn)+' (opens Google Maps)" aria-label="'+esc(vn+(p.sg?", "+p.sg:"")+": address and info (opens Google Maps in a new tab)")+'">'+esc(p.v+(p.sg?", "+p.sg:""))+'</a>';
+ if(p.y&&p.y.toLowerCase()!==p.v.toLowerCase())h+='<span class="city">'+esc(p.y)+'</span>';   // not "Chanhassen, Main Stage  Chanhassen"
  h+='</div>';
- var k=[];
- if(p.co)k.push('<span class="co"'+(p.cf?' title="'+esc(p.cf)+'"':"")+'>'+esc(p.co)+'</span>');
- k.push('<span'+(p.vf?' title="'+esc(p.vf)+'"':"")+'>'+esc(p.v+(p.sg?", "+p.sg:""))+'</span>');
- if(p.y.toLowerCase()!==(p.co||p.v).toLowerCase())k.push('<span>'+esc(p.y)+'</span>');   // not "Chanhassen \u00b7 Chanhassen"
- h+='<div class="kick">'+k.join(" · ")+'</div>';
+ // title: the event page (the ticket link if the source has no page for the show)
  h+='<div class="l1">';
- h+=main?'<a class="h" href="'+esc(main)+'" target="_blank" rel="noopener noreferrer">'+esc(p.t)+'<span class="ext" aria-hidden="true">↗</span><span class="vh"> (opens in a new tab)</span></a>':'<span class="h">'+esc(p.t)+'</span>';
+ h+=main?'<a class="h" href="'+esc(main)+'" target="_blank" rel="noopener noreferrer"'+(p.lh?' title="No page for this show; opens the company’s calendar"':"")+'>'+esc(p.t)+'<span class="vh"> (opens in a new tab)</span></a>':'<span class="h">'+esc(p.t)+'</span>';
  var bt=STATUS_LABEL[p.st];
  if(bt)h+='<span class="badge '+(p.st==="sold_out"?"sold":p.st==="extended"?"ext":"off")+'">'+esc(bt)+'</span>';
  h+='</div>';
- var m='<span class="ty" data-t="'+esc(p.ty)+'">'+esc(TYPE_LABEL[p.ty]||p.ty)+'</span>';
- if(p.ag)m+='<span>'+esc(p.ag)+(p.ad?' <span class="dflt">(usual for this company)</span>':"")+'</span>';
+ if(p.co)h+='<div class="co"'+(p.cf?' title="'+esc(p.cf)+'"':"")+'>'+esc(p.co)+'</div>';
+ // detail line: time · price · Tickets, then the type pill, age, closing soon
+ var m='<span class="tm'+(p.tm?"":" tba")+'">'+(p.tm?esc(fmtTime(p.tm)):"Time TBA")+'</span>';
  if(p.pr)m+='<span class="price">'+esc(p.pr)+'</span>';
+ if(tk)m+='<a class="tixl" href="'+esc(tk)+'" target="_blank" rel="noopener noreferrer" title="Buy tickets (opens the seller’s page)" aria-label="Tickets (opens in a new tab)">'+TIX+'<span class="lbl">Tickets</span></a>';
+ m+='<span class="ty" data-t="'+esc(p.ty)+'">'+esc(TYPE_LABEL[p.ty]||p.ty)+'</span>';
+ if(p.ag)m+='<span>'+esc(p.ag)+(p.ad?' <span class="dflt">(usual for this company)</span>':"")+'</span>';
+ if(p.cs)m+='<span class="soon">Closing soon'+(p.rc?" · through "+esc(mdLabel(p.rc)):"")+'</span>';
+ if(su&&p.lh)m+='<a class="vsite" href="'+esc(su)+'" target="_blank" rel="noopener noreferrer" title="No page for this show; opens the company’s calendar">company site</a>';
  h+='<div class="meta">'+m+'</div>';
  if(p.ac.length)h+='<div class="acc">'+p.ac.map(function(a){return "<span>"+esc(ACC_LABEL[a]||a)+"</span>"}).join("")+'</div>';
  var L=[];
- if(link(p.tk)&&link(p.su)&&p.su!==p.tk)L.push('<a href="'+esc(p.su)+'" target="_blank" rel="noopener noreferrer">'+(p.lh?"Company calendar":"Event page")+'</a>');
- else if(!link(p.tk)&&p.lh)L.push('<span>Company calendar page</span>');
  if(p.al&&p.al.length){var a=[];p.al.forEach(function(x){if(link(x.u))a.push('<a href="'+esc(x.u)+'" target="_blank" rel="noopener noreferrer">'+esc(x.n)+'</a>')});
   if(a.length)L.push('<span class="al">Also on: '+a.join(", ")+'</span>')}
  if(L.length)h+='<div class="links">'+L.join("")+'</div>';
