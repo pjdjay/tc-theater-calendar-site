@@ -358,7 +358,7 @@ function card(i){
  // venue (Google Maps) and city above the title, as on music
  var vn=p.vf||p.v;
  h+='<div class="kick"><a class="vlink" href="'+esc(venueMapUrl(p))+'" target="_blank" rel="noopener noreferrer" title="Address and info for '+esc(vn)+' (opens Google Maps)" aria-label="'+esc(vn+(p.sg?", "+p.sg:"")+": address and info (opens Google Maps in a new tab)")+'">'+esc(p.v+(p.sg?", "+p.sg:""))+'</a>';
- if(p.y&&p.y.toLowerCase()!==p.v.toLowerCase())h+='<span class="city">'+esc(p.y)+'</span>';   // not "Chanhassen, Main Stage  Chanhassen"
+ if(p.y)h+='<span class="city">'+esc(p.y)+'</span>';
  h+='</div>';
  // title: the event page (the ticket link if the source has no page for the show)
  h+='<div class="l1">';
