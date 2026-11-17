@@ -52,13 +52,29 @@
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 var(--font)}
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-header.top,.tools,.filters,.status,.hmsg,footer{max-width:var(--maxw);margin-left:auto;margin-right:auto;padding-left:var(--gut);padding-right:var(--gut)}
+header.top,.sbar,.tools,.sel,.filters,.status,.hmsg,footer{max-width:var(--maxw);margin-left:auto;margin-right:auto;padding-left:var(--gut);padding-right:var(--gut)}
 main{max-width:var(--maxw);margin:0 auto;padding:0 0 40px}
 /* header */
 header.top{padding-top:12px}
 h1{display:inline-block;margin:0;font-size:1.6rem;font-weight:700;line-height:1.1;letter-spacing:-.015em;color:var(--accent)}
 .updated{display:block;margin-top:3px;color:var(--muted);font-size:.8rem}
 /* toolbar and chips */
+/* search */
+.sbar{margin-top:10px}
+.sbox{position:relative}
+.sbox input{width:100%;box-sizing:border-box;font:inherit;font-size:1rem;padding:10px 44px 10px 40px;min-height:44px;border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);color:var(--ink);-webkit-appearance:none;appearance:none}
+.sbox input::placeholder{color:var(--muted)}
+.sic{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted);pointer-events:none}
+.sclear{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:0;border-radius:var(--r-sm);background:none;color:var(--muted);font:inherit;font-size:1.05rem;cursor:pointer}
+.sug{position:absolute;left:0;right:0;top:100%;margin-top:4px;z-index:30;max-height:min(60vh,420px);overflow-y:auto;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-md);box-shadow:var(--pop);padding:4px 0}
+.sg{padding:8px 12px 2px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.so{display:flex;gap:10px;justify-content:space-between;align-items:baseline;padding:10px 12px;min-height:44px;box-sizing:border-box;cursor:pointer;overflow-wrap:anywhere}
+.so small{color:var(--muted);white-space:nowrap}
+.so:hover,.so[aria-selected=true]{background:var(--accent-soft)}
+.sno{padding:10px 12px;color:var(--muted);font-size:.9rem}
+.sel{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.sel[hidden]{display:none}
+.sel .chip{max-width:100%;text-align:left;overflow-wrap:anywhere}
 .tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip,.fbtn{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:4px 13px;border:1px solid var(--line-2);border-radius:var(--r-pill);background:var(--surface);color:var(--ink);font:inherit;font-size:.86rem;font-weight:500;cursor:pointer}
@@ -176,7 +192,14 @@ li.ev{padding:14px 18px 10px}
 </head>
 <body>
 <header class="top"><h1>Twin Cities Theater</h1><span class="updated" id="updated"></span></header>
+<div class="sbar" id="sbar"><div class="sbox">
+<svg class="sic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>
+<input type="text" id="q" placeholder="Search show, company or venue" aria-label="Search show, company or venue" role="combobox" aria-expanded="false" aria-controls="sug" aria-autocomplete="list" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+<button type="button" class="sclear" id="qclear" aria-label="Clear search" hidden>✕</button>
+<div class="sug" id="sug" role="listbox" aria-label="Suggestions" hidden></div>
+</div></div>
 <div class="tools"><button type="button" class="fbtn" id="fbtn" aria-controls="filters" aria-expanded="false">Filters</button><button type="button" class="chip" id="soon" aria-pressed="false">Closing soon</button><button type="button" class="chip" id="hchip" aria-pressed="false">Hearted (0)</button><label class="jd chip"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span aria-hidden="true">Date</span><input type="date" id="jump-date" aria-label="Jump to date"></label></div>
+<div class="sel" id="sel" role="group" aria-label="Active search filters" hidden></div>
 <div class="filters" id="filters" hidden><div class="fpanel">
 <div class="frow"><div class="flabel" id="l-types">Type</div><div class="chips" id="f-types" role="group" aria-labelledby="l-types"></div></div>
 <div class="frow"><div class="flabel" id="l-levels">Producer</div><div class="chips" id="f-levels" role="group" aria-labelledby="l-levels"></div></div>
@@ -347,6 +370,18 @@ function card(i){
 
 // filters: any chosen chip within a group, every group must match; applied before the daily limit
 function setOf(a){var o={};a.forEach(function(v){o[v]=1});return o}
+// ---- search: show titles, companies and venues, normalized and indexed once on load. Not saved; looks at all 12 weeks. ----
+function norm(s){return String(s).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim()}
+var q={k:"",label:"",venues:[],cos:[]};   // k: free text or a chosen show title; venues and cos: chosen chips
+function searching(){return q.k!==""||q.venues.length>0||q.cos.length>0}
+var TIDX=Object.create(null),CIDX=Object.create(null),VIDX=Object.create(null);
+P.forEach(function(p){
+ p._s=norm(p.t+" "+(p.co||"")+" "+p.v+" "+p.y);
+ if(p.d<TODAY)return;   // only upcoming performances are suggested
+ function add(m,n){var k=norm(n);if(!k)return;var o=m[k];if(o)o.c++;else m[k]={n:n,k:k,c:1}}
+ add(TIDX,p.t);if(p.co)add(CIDX,p.co);add(VIDX,p.v)});
+function toList(m){return Object.keys(m).map(function(k){return m[k]})}
+var TLIST=toList(TIDX),CLIST=toList(CIDX),VLIST=toList(VIDX);
 function matcher(){
  var T=setOf(st.types),Lv=setOf(st.levels),A=setOf(st.ages),C=setOf(st.cities),X=st.acc;
  return function(p){
@@ -355,6 +390,9 @@ function matcher(){
   if(st.ages.length&&!A[p.ab])return false;
   if(st.cities.length&&!C[p.y])return false;
   if(st.soon&&!p.cs)return false;
+  if(q.k&&p._s.indexOf(q.k)<0)return false;
+  if(q.venues.length&&q.venues.indexOf(p.v)<0)return false;
+  if(q.cos.length&&q.cos.indexOf(p.co||"")<0)return false;
   if(X.length){var ok=false;for(var j=0;j<X.length;j++)if(p.ac.indexOf(X[j])>-1){ok=true;break}if(!ok)return false}
   return true};
 }
@@ -362,19 +400,20 @@ var WEEKS=D.weeks||12,STEP=D.step||4,shown=Math.min(STEP,WEEKS);   // weeks open
 var expanded={};
 var daysEl=$("days");
 function render(){
- var HV=heartView,ok=matcher(),days=[],byD={},total=0,anyFuture=false,cut=weekCut(TODAY,shown),hid={},nHid=0;
+ var HV=heartView,S=searching(),ok=matcher(),days=[],byD={},total=0,anyFuture=false,cut=weekCut(TODAY,shown),hid={},nHid=0;
  function add(d,it){var g=byD[d];if(!g){g=byD[d]={d:d,i:[]};days.push(g)}g.i.push(it);total++}
  function hide(k){if(!hid[k]){hid[k]=1;nHid++}}
  for(var i=0;i<P.length;i++){var p=P[i];
   if(p.d<TODAY)continue;           // past days are hidden by the viewer's clock
   anyFuture=true;
   if(HV){if(!Marks.get(p.pk))continue}   // hearted view: hearted performances in every week, open or closed
-  else if(p.d>=cut)continue;       // closed weeks: filters and the count see only what is open
+  else if(!S&&p.d>=cut)continue;       // a search looks at all 12 weeks       // closed weeks: filters and the count see only what is open
   if(!ok(p)){if(HV)hide(p.pk);continue}
   add(p.d,i)}
  ORPH={};
  if(HV){   // hearts with no listed performance any more: shown from the snapshot (it has no type or age, so no filter can hide it)
   Marks.keys().forEach(function(k){if(EK[k])return;var m=Marks.get(k);if(m.snap.d<TODAY)return;
+   if(!orphOk(m.snap)){hide(k);return}
    ORPH[k]=m.snap;add(m.snap.d,k)});
   days.sort(function(a,b){return a.d<b.d?-1:a.d>b.d?1:0})}
  var out=[];
@@ -383,15 +422,15 @@ function render(){
   for(var j=0;j<lim;j++){var it=day.i[j];cards.push(typeof it==="number"?card(it):goneCard(it,ORPH[it]))}
   out.push('<section class="day" data-d="'+day.d+'"><h2><span class="leaf" aria-hidden="true"><span class="lm">'+MON[dt.getUTCMonth()]+'</span><span class="ld">'+dt.getUTCDate()+'</span></span><span class="lw">'+WD[dt.getUTCDay()]+'<span class="vh">, '+MON[dt.getUTCMonth()]+" "+dt.getUTCDate()+'</span></span><small>'+n+" performance"+(n===1?"":"s")+'</small></h2><ul>'+cards.join("")+'</ul>'+(lim<n?'<button type="button" class="more" data-more="'+day.d+'">Show '+(n-lim)+' more</button>':"")+'</section>');
  });
- if(!out.length)out.push('<div class="empty">'+(HV&&!nHid?"No hearted performances yet. Tap the heart on a performance to keep it here.":nActive()?'No performances match these filters'+(shown<WEEKS?" in the weeks shown":"")+'.<br><button type="button" class="linkbtn" data-clear="1">Clear filters</button>':anyFuture?"No performances listed.":"This listing has ended. Reload the page for the latest one.")+'</div>');
+ if(!out.length)out.push('<div class="empty">'+(HV&&!nHid?"No hearted performances yet. Tap the heart on a performance to keep it here.":(nActive()||S)?'No performances match '+(S&&!nActive()?'this search':'these filters')+(!S&&shown<WEEKS?" in the weeks shown":"")+'.<br><button type="button" class="linkbtn" data-clear="1">Clear filters</button>':anyFuture?"No performances listed.":"This listing has ended. Reload the page for the latest one.")+'</div>');
  daysEl.innerHTML=out.join("");
  if(HV&&Marks.keys().length)daysEl.appendChild(clearBox());
  var s=$("status");
- s.innerHTML=HV&&nHid?nHid+" hidden by filters"+' <button type="button" class="linkbtn" data-clear="1">Clear filters</button>':nActive()?total+" performance"+(total===1?"":"s")+' match <button type="button" class="linkbtn" data-clear="1">Clear filters</button>':"";
+ s.innerHTML=HV&&nHid?nHid+" hidden by filters"+' <button type="button" class="linkbtn" data-clear="1">Clear filters</button>':(nActive()||S)?total+" performance"+(total===1?"":"s")+' match <button type="button" class="linkbtn" data-clear="1">Clear filters</button>':"";
  var fb=$("fbtn"),c=nActive();
  fb.innerHTML="Filters"+(c?' <span class="n">'+c+"</span>":"");
  $("soon").setAttribute("aria-pressed",st.soon?"true":"false");
- var nb=$("nextwk");nb.hidden=HV||shown>=WEEKS;   // everything open: no button
+ var nb=$("nextwk");nb.hidden=HV||S||shown>=WEEKS;   // everything open: no button
  if(!nb.hidden){var more=Math.min(STEP,WEEKS-shown);nb.textContent="Show next "+more+(more===1?" week":" weeks")}
  syncHearts();
 }
@@ -424,7 +463,7 @@ function chips(){
   $(g[1]).innerHTML=vals.map(function(v){return '<button type="button" class="chip" data-g="'+key+'" data-v="'+esc(v)+'" aria-pressed="'+(st[key].indexOf(v)>-1)+'">'+esc(labels?labels[v]:v)+"</button>"}).join("");
  });
 }
-function clearAll(){st={types:[],levels:[],ages:[],acc:[],cities:[],soon:false};save();chips();render()}
+function clearAll(){st={types:[],levels:[],ages:[],acc:[],cities:[],soon:false};save();q.k=q.label="";q.venues=[];q.cos=[];resetBox();syncSel();chips();render()}
 $("filters").addEventListener("click",function(e){
  var b=e.target.closest("button");if(!b)return;
  if(b.id==="f-clear"){clearAll();return}
@@ -448,6 +487,75 @@ document.addEventListener("click",function(e){
  if(b.getAttribute("data-clear")){clearAll();return}
  var d=b.getAttribute("data-more");if(d){expanded[d]=1;render()}
 });
+function orphOk(g){   // a saved snapshot has a title and venue only: a company chip cannot be checked, so it hides orphans
+ if(q.k&&norm(g.h+" "+g.v).indexOf(q.k)<0)return false;
+ if(q.venues.length&&q.venues.indexOf(g.v)<0)return false;
+ return !q.cos.length}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function rank(k,t){var i=k.indexOf(t);return i<0?-1:i===0?0:k.indexOf(" "+t)>=0?1:2}
+function pick(list,t,skip){var out=[];
+ for(var i=0;i<list.length;i++){if(skip&&skip(list[i]))continue;var r=rank(list[i].k,t);if(r>=0)out.push([r,list[i]])}
+ out.sort(function(a,b){return a[0]-b[0]||b[1].c-a[1].c||(a[1].n<b[1].n?-1:a[1].n>b[1].n?1:0)});
+ return out.slice(0,6).map(function(x){return x[1]})}
+var inp=$("q"),sug=$("sug"),qclear=$("qclear"),sel=$("sel"),sbar=$("sbar");
+var opts=[],act=-1,timer=0;
+function setAct(i){
+ if(act>=0&&opts[act])opts[act].el.setAttribute("aria-selected","false");
+ act=i;
+ if(i>=0&&opts[i]){opts[i].el.setAttribute("aria-selected","true");inp.setAttribute("aria-activedescendant",opts[i].el.id);opts[i].el.scrollIntoView({block:"nearest"})}
+ else inp.removeAttribute("aria-activedescendant")}
+function closeList(){sug.hidden=true;inp.setAttribute("aria-expanded","false");opts=[];act=-1;inp.removeAttribute("aria-activedescendant")}
+function group(label,items,type){
+ if(!items.length)return;
+ sug.appendChild(el("div","sg",label)).setAttribute("role","presentation");
+ items.forEach(function(it){
+  var d=el("div","so");d.id="so-"+opts.length;d.setAttribute("role","option");d.setAttribute("aria-selected","false");
+  d.appendChild(el("span",null,it.n));d.appendChild(el("small",null,it.c+(it.c===1?" performance":" performances")));
+  var o={t:type,i:it,el:d};opts.push(o);
+  d.onmousedown=function(ev){ev.preventDefault()};   // keep focus in the box
+  d.onclick=function(){choose(o,true)};
+  sug.appendChild(d)})}
+function suggest(){
+ var t=norm(inp.value);
+ if(t.length<2){closeList();return}
+ sug.textContent="";opts=[];act=-1;
+ group("Shows",pick(TLIST,t,function(x){return x.k===q.k}),"t");
+ group("Companies",pick(CLIST,t,function(x){return q.cos.indexOf(x.n)>=0}),"c");
+ group("Venues",pick(VLIST,t,function(x){return q.venues.indexOf(x.n)>=0}),"v");
+ if(!opts.length)sug.appendChild(el("div","sno","No show, company or venue matches \u201c"+inp.value.trim()+"\u201d. Press Enter to search anyway."));
+ sug.hidden=false;inp.setAttribute("aria-expanded","true");inp.removeAttribute("aria-activedescendant")}
+function syncSel(){
+ sel.textContent="";
+ function c(label,aria,fn){var b=el("button","chip",label+" \u2715");b.type="button";b.setAttribute("aria-pressed","true");b.setAttribute("aria-label","Remove filter: "+aria);b.onclick=fn;sel.appendChild(b)}
+ q.cos.forEach(function(n){c(n,"company "+n,function(){q.cos.splice(q.cos.indexOf(n),1);syncSel();render()})});
+ q.venues.forEach(function(n){c(n,"venue "+n,function(){q.venues.splice(q.venues.indexOf(n),1);syncSel();render()})});
+ if(q.k)c("\u201c"+q.label+"\u201d","text "+q.label,function(){q.k=q.label="";syncSel();render()});
+ sel.hidden=!sel.firstChild}
+function setText(label){var k=norm(label);if(!k)return;q.k=k;q.label=label.trim().replace(/\s+/g," ");syncSel();render()}
+function resetBox(){clearTimeout(timer);inp.value="";qclear.hidden=true;closeList()}
+function choose(o,pointer){
+ if(o.t==="v"){if(q.venues.indexOf(o.i.n)<0)q.venues.push(o.i.n);syncSel();render()}
+ else if(o.t==="c"){if(q.cos.indexOf(o.i.n)<0)q.cos.push(o.i.n);syncSel();render()}
+ else setText(o.i.n);
+ resetBox();if(pointer)inp.blur()}
+inp.addEventListener("input",function(){qclear.hidden=!inp.value;clearTimeout(timer);
+ if(norm(inp.value).length<2){closeList();return}
+ timer=setTimeout(suggest,150)});
+inp.addEventListener("focus",function(){if(norm(inp.value).length>=2&&sug.hidden)suggest()});
+inp.addEventListener("keydown",function(ev){
+ var k=ev.key;
+ if(k==="ArrowDown"||k==="ArrowUp"){
+  ev.preventDefault();clearTimeout(timer);
+  if(sug.hidden)suggest();
+  if(!opts.length)return;
+  setAct(k==="ArrowDown"?(act+1)%opts.length:(act<=0?opts.length-1:act-1))
+ }else if(k==="Enter"){
+  ev.preventDefault();clearTimeout(timer);
+  if(!sug.hidden&&act>=0&&opts[act])choose(opts[act],false);
+  else if(norm(inp.value)){setText(inp.value);resetBox()}
+ }else if(k==="Escape"){if(!sug.hidden){ev.preventDefault();closeList()}}});
+qclear.onclick=function(){resetBox();inp.focus()};
+document.addEventListener("pointerdown",function(ev){if(!sbar.contains(ev.target))closeList()});
 var topBtn=$("top");
 window.addEventListener("scroll",function(){topBtn.hidden=window.pageYOffset<window.innerHeight*1.5},{passive:true});
 topBtn.addEventListener("click",function(){window.scrollTo(0,0)});
@@ -467,7 +575,7 @@ function jumpTo(iso,setHash){
  for(var i=0;i<secs.length;i++){if(secs[i].getAttribute("data-d")>=iso){target=secs[i];break}}
  jumpIn.value=iso;
  if(setHash){try{history.replaceState(null,"","#"+iso)}catch(e){}}
- var why=nActive()?" with these filters":"";
+ var why=(nActive()||searching())?" with these filters":"";
  if(!target){st2.textContent="No performances on or after "+fmtDay(iso)+why+".";return}
  target.scrollIntoView({behavior:smooth()?"smooth":"auto",block:"start"});
  var td=target.getAttribute("data-d");
